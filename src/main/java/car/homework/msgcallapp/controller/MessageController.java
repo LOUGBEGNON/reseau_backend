@@ -4,8 +4,12 @@ import car.homework.msgcallapp.model.Message;
 import car.homework.msgcallapp.model.MessageRequest;
 import car.homework.msgcallapp.model.AESEncryption;
 import car.homework.msgcallapp.model.INMSGPacket;
+import car.homework.msgcallapp.service.WebSocketService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 //@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 @RestController
@@ -27,24 +32,49 @@ public class MessageController {
     private final MessageService messageService;
     @Autowired
     private UserService userService;
+    private final WebSocketService webSocketService;
 
     // Assurez-vous que MessageService est passé par le constructeur
-    public MessageController(MessageService messageService) {
+    public MessageController(MessageService messageService, WebSocketService webSocketService) {
         this.userService = userService;
         this.messageService = messageService;
+        this.webSocketService = webSocketService;
+    }
+
+    public boolean sendPacket(INMSGPacket packet) {
+        String packetData = convertPacketToJson(packet);
+        return webSocketService.send(packetData);
+    }
+
+    private String convertPacketToJson(INMSGPacket packet) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(packet);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @PostMapping("/send")
     public ResponseEntity<String> sendMessage(@RequestBody MessageRequest messageRequest) {
         try {
+            String sessionId = UUID.randomUUID().toString();
             String encryptedMessage = AESEncryption.encrypt(messageRequest.getMessageContent());
-            INMSGPacket packet = new INMSGPacket("1.0", 256, "session123", "0x03", "SUCCESS", encryptedMessage);
+            INMSGPacket packet = new INMSGPacket("1.0", 256, sessionId, "0x03", "SUCCESS", encryptedMessage);
             if (messageRequest.getSenderId() == null || messageRequest.getRecipientId() == null || messageRequest.getMessageContent() == null) {
                 return ResponseEntity.badRequest().body("Les données du message sont manquantes.");
             }
             messageService.sendMessage(messageRequest.getSenderId(), messageRequest.getRecipientId(), messageRequest.getMessageContent(), messageRequest.getGroupId());
             // Logique pour envoyer le paquet
-            return ResponseEntity.ok("Message chiffré envoyé à " + messageRequest.getRecipientId());
+            boolean isSent = sendPacket(packet);
+            System.out.println("isSent");
+            System.out.println(isSent);
+            if (isSent) {
+                return ResponseEntity.ok("Message chiffré envoyé à " + messageRequest.getRecipientId());
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Échec de l'envoi du message.");
+            }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erreur lors du chiffrement du message.");
         }

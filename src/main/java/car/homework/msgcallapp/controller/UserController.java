@@ -1,6 +1,7 @@
 package car.homework.msgcallapp.controller;
 
 import car.homework.msgcallapp.model.AppUser.UserStatus;
+import car.homework.msgcallapp.model.INMSGPacket;
 import car.homework.msgcallapp.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,7 @@ import car.homework.msgcallapp.model.AppUser;  // Mettez à jour ici
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -56,6 +58,16 @@ public class UserController {
         try {
             UserStatus userStatus = UserStatus.valueOf(status.toUpperCase());
             userService.updateUserStatus(username, userStatus);
+
+            // Créer un paquet pour notifier la mise à jour du statut
+            INMSGPacket packet = new INMSGPacket(
+                    "1.0",
+                    256,
+                    UUID.randomUUID().toString(),  // Utiliser le nom d'utilisateur comme session ID ou quelque chose d'unique
+                    "0x02",  // Code Hex pour une mise à jour de statut
+                    userStatus.name(),
+                    "Status update successful"
+            );
             return ResponseEntity.ok("Statut mis à jour avec succès");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Statut invalide");
