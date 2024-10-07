@@ -3,6 +3,10 @@ package car.homework.msgcallapp.controller;
 import car.homework.msgcallapp.model.AppUser.UserStatus;
 import car.homework.msgcallapp.model.INMSGPacket;
 import car.homework.msgcallapp.service.UserService;
+import car.homework.msgcallapp.service.WebSocketService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import car.homework.msgcallapp.model.AppUser;  // Mettez à jour ici
@@ -18,9 +22,26 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final WebSocketService webSocketService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, WebSocketService webSocketService) {
         this.userService = userService;
+        this.webSocketService = webSocketService;
+    }
+
+    public boolean sendPacket(INMSGPacket packet) {
+        String packetData = convertPacketToJson(packet);
+        return webSocketService.send(packetData);
+    }
+
+    private String convertPacketToJson(INMSGPacket packet) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(packet);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     // Route pour l'inscription des utilisateurs
@@ -58,17 +79,68 @@ public class UserController {
         try {
             UserStatus userStatus = UserStatus.valueOf(status.toUpperCase());
             userService.updateUserStatus(username, userStatus);
-
-            // Créer un paquet pour notifier la mise à jour du statut
             INMSGPacket packet = new INMSGPacket(
                     "1.0",
                     256,
-                    UUID.randomUUID().toString(),  // Utiliser le nom d'utilisateur comme session ID ou quelque chose d'unique
-                    "0x02",  // Code Hex pour une mise à jour de statut
+                    UUID.randomUUID().toString(),
+                    "0x07",
                     userStatus.name(),
                     "Status update successful"
             );
-            return ResponseEntity.ok("Statut mis à jour avec succès");
+            boolean isSent = sendPacket(packet);
+
+            if (userStatus == UserStatus.CONNECTED) {
+                INMSGPacket packetConnected = new INMSGPacket(
+                        "1.0",
+                        256,
+                        UUID.randomUUID().toString(),
+                        "0x10",
+                        userStatus.name(),
+                        "Status update"
+                );
+                boolean isSentpacketConnected = sendPacket(packetConnected);
+            }
+
+            if (userStatus == UserStatus.AWAY) {
+                INMSGPacket packetAway = new INMSGPacket(
+                        "1.0",
+                        256,
+                        UUID.randomUUID().toString(),
+                        "0x11",
+                        userStatus.name(),
+                        "Status update successful"
+                );
+                boolean isSentAway = sendPacket(packetAway);
+            }
+
+            if (userStatus == UserStatus.BUSY) {
+                INMSGPacket packetBusy = new INMSGPacket(
+                        "1.0",
+                        256,
+                        UUID.randomUUID().toString(),
+                        "0x12",
+                        userStatus.name(),
+                        "Status update successful"
+                );
+                boolean isSentBusy = sendPacket(packetBusy);
+            }
+
+            if (userStatus == UserStatus.OFFLINE) {
+                INMSGPacket packetOffline = new INMSGPacket(
+                        "1.0",
+                        256,
+                        UUID.randomUUID().toString(),
+                        "0x13",
+                        userStatus.name(),
+                        "Status update successful"
+                );
+                boolean isSentOffline = sendPacket(packetOffline);
+            }
+            if (isSent) {
+                return ResponseEntity.ok("Statut mis à jour avec succès et notifié.");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Statut mis à jour mais échec de la notification.");
+            }
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Statut invalide");
         }
@@ -94,13 +166,4 @@ public class UserController {
         userService.setUserStatusOffline(username);
         return ResponseEntity.ok("Utilisateur " + username + " est maintenant hors ligne.");
     }
-
-    // Récupérer le statut d'un utilisateur spécifique
-//    @GetMapping("/status/{username}")
-//    public ResponseEntity<String> getUserStatus(@PathVariable String username) {
-//        UserStatus status = userService.getUserStatus(username);
-//        return ResponseEntity.ok(status.name());
-//    }
-
-
 }

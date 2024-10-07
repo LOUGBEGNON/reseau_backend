@@ -42,8 +42,8 @@ public class SecurityConfig {
                 )
                 .httpBasic(withDefaults())
                 .formLogin(form -> form
-                        .successHandler(successHandler) // Utilisation du gestionnaire de succès personnalisé
-//                        .loginPage("/api/auth/login") // Page de connexion personnalisée (si nécessaire)
+                        .successHandler(successHandler)
+//                        .loginPage("/api/auth/login")
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -61,22 +61,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));  // Autoriser toutes les origines
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));  // Autoriser toutes les méthodes HTTP
-        configuration.setAllowedHeaders(Arrays.asList("*"));  // Autoriser tous les en-têtes
-        configuration.setAllowCredentials(true);  // Autoriser l'envoi de cookies ou d'informations d'authentification
-
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);  // Appliquer la configuration CORS à toutes les routes
-
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
 
     @Bean
-//    @Override
     public UserDetailsService userDetailsService() {
-        // Implémenter votre propre gestion des utilisateurs ici
         return username -> {
             AppUser user = userService.findByUsername(username);
             if (user == null) {

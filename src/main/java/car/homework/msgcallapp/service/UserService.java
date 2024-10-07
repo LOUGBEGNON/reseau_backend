@@ -1,7 +1,6 @@
 package car.homework.msgcallapp.service;
 
-import car.homework.msgcallapp.model.AppUser;  // Mettez à jour ici
-//import org.springframework.security.crypto.password.PasswordEncoder;
+import car.homework.msgcallapp.model.AppUser;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
@@ -9,24 +8,15 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import car.homework.msgcallapp.model.AppUser.UserStatus;
-//import car.homework.msgcallapp.repository.AppUserRepository;
 
 @Service
 public class UserService {
 
     private final PasswordEncoder passwordEncoder;
     private Map<String, AppUser> users = new HashMap<>(); // Utilisation de AppUser
-//    private final AppUserRepository userRepository;
 
     public UserService(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
-        // Ajouter des utilisateurs pour le test
-//        users.put("user1", new AppUser("user1", passwordEncoder.encode("password"), "Online"));
-//        users.put("user2", new AppUser("user2", passwordEncoder.encode("password"), "Offline"));
-//        users.put("user3", new AppUser("user3", passwordEncoder.encode("password"), "Online"));
-//        users.put("user4", new AppUser("user4", passwordEncoder.encode("password"), "Offline"));
-//        users.put("user5", new AppUser("user5", passwordEncoder.encode("password"), "Online"));
-//        users.put("user6", new AppUser("user6", passwordEncoder.encode("password"), "Offline"));
     }
 
     // Méthode d'inscription
@@ -38,8 +28,7 @@ public class UserService {
         AppUser user = new AppUser(username, encodedPassword);
         System.out.println("user");
         System.out.println(user);
-        users.put(username, user); // Enregistrer l'utilisateur dans la mémoire
-//        users.put(username, new AppUser(username, encodedPassword));
+        users.put(username, user);
         return "Utilisateur inscrit avec succès.";
     }
 
@@ -67,7 +56,6 @@ public class UserService {
 
     // Vérifier les identifiants de l'utilisateur
     public boolean authenticateUser(String username, String rawPassword) {
-        System.out.println("je suis");
         System.out.println(username);
         System.out.println(rawPassword);
         AppUser user = users.get(username);
@@ -113,9 +101,4 @@ public class UserService {
         }
         return onlineUsers;
     }
-
-//    public String getUserStatus(String username) {
-//        AppUser user = users.get(username);
-//        return user != null ? user.getStatus() : "Unknown";
-//    }
 }

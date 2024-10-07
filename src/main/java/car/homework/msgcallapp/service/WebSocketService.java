@@ -40,10 +40,8 @@ public class WebSocketService {
 
     // Simulez l'envoi du message à travers WebSocket
     public boolean send(String data) {
-        // Logique fictive pour envoyer des données via WebSocket
-        // Vous devez implémenter l'intégration WebSocket ici
         System.out.println("Sending data via WebSocket: " + data);
-        return true; // Retourner false en cas d'échec
+        return true;
     }
 }
 

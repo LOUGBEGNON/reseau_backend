@@ -15,11 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import car.homework.msgcallapp.service.MessageService;
 import car.homework.msgcallapp.service.UserService;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +32,6 @@ public class MessageController {
     private UserService userService;
     private final WebSocketService webSocketService;
 
-    // Assurez-vous que MessageService est passé par le constructeur
     public MessageController(MessageService messageService, WebSocketService webSocketService) {
         this.userService = userService;
         this.messageService = messageService;
@@ -66,7 +63,6 @@ public class MessageController {
                 return ResponseEntity.badRequest().body("Les données du message sont manquantes.");
             }
             messageService.sendMessage(messageRequest.getSenderId(), messageRequest.getRecipientId(), messageRequest.getMessageContent(), messageRequest.getGroupId());
-            // Logique pour envoyer le paquet
             boolean isSent = sendPacket(packet);
             System.out.println("isSent");
             System.out.println(isSent);
@@ -82,21 +78,11 @@ public class MessageController {
 
     @RequestMapping(value = "/get_messages", method = RequestMethod.OPTIONS)
     public ResponseEntity<Void> handleOptions(HttpServletResponse response) {
-        // Ajouter manuellement des en-têtes CORS pour tester
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
         return ResponseEntity.ok().build();
     }
-
-//    @GetMapping("/get_messages")
-//    public ResponseEntity<List<Message>> getMessages(HttpServletResponse response) {
-////        response.setHeader("Access-Control-Allow-Origin", "*");
-////        return ResponseEntity.ok(messageService.getMessages());
-//        List<Message> decryptedMessages = messageService.getDecryptedMessages();  // Récupérer les messages décryptés
-//        return ResponseEntity.ok(decryptedMessages);
-//    }
 
     // Récupérer les messages
     @GetMapping("/get_messages")
@@ -120,7 +106,6 @@ public class MessageController {
     // Méthode pour extraire les identifiants de l'en-tête Authorization
     private String[] extractCredentials(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Basic ")) {
-            // Décoder l'en-tête Basic Authorization
             String base64Credentials = authHeader.substring(6);
             String credentials = new String(Base64.getDecoder().decode(base64Credentials));
             return credentials.split(":", 2);
@@ -142,13 +127,17 @@ public class MessageController {
             return ResponseEntity.status(401).body(null);
         }
         List<Message> messages = messageService.getMessagesForGroup(groupId);
+
+        // Utilisez Jackson ou une autre bibliothèque pour convertir la liste en JSON
+        ObjectMapper mapper = new ObjectMapper();
+        String messagesJson;
+
+
+        INMSGPacket packet = new INMSGPacket("1.0", 256, UUID.randomUUID().toString(), "0x06", "SUCCESS", messages.toString());
+
+        boolean isSent = sendPacket(packet);
+        System.out.println("isSent");
+        System.out.println(isSent);
         return ResponseEntity.ok(messages);
     }
-
-//    @PostMapping("/send")
-//    public ResponseEntity<String> sendMessage(@RequestBody MessageRequest messageRequest) {
-//        messageService.sendMessage(messageRequest.getSenderId(), messageRequest.getRecipientId(), messageRequest.getMessageContent(), messageRequest.getGroupId());
-//        return ResponseEntity.ok("Message envoyé au groupe " + messageRequest.getGroupId());
-//    }
-
 }

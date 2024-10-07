@@ -20,11 +20,9 @@ public class AuthController {
     private final UserService userService;
     private final WebSocketService webSocketService;
 
-
     public AuthController(UserService userService, WebSocketService webSocketService) {
         this.userService = userService;
         this.webSocketService = webSocketService;
-
     }
 
     public boolean sendPacket(INMSGPacket packet) {
@@ -108,18 +106,4 @@ public class AuthController {
         String status = String.valueOf(userService.getUserStatus(username));
         return ResponseEntity.ok("Le statut de " + username + " est : " + status);
     }
-
-//    // Endpoint pour authentifier l'utilisateur
-//    @PostMapping("/login")
-//    public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
-//        System.out.println("ResponseEntity");
-//        System.out.println(username);
-//        AppUser user = userService.findByUsername(username);  // Utiliser AppUser ici
-//        if (user != null && userService.checkPassword(password, user.getPassword())) {
-//            return ResponseEntity.ok("Authentification réussie pour " + username);
-//        }
-//        return ResponseEntity.status(401).body("Échec de l'authentification");
-//    }
-
-
 }
